@@ -1,5 +1,3 @@
 # MinneAnalytics
 
-testing 
-
-http://minneanalytics.org/minnemudac-spring-2021/
+link to competition: http://minneanalytics.org/minnemudac-spring-2021/
