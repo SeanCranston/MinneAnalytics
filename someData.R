@@ -11,7 +11,6 @@ reduced_tbl <- site_selector[[1]] #%>% filter() get rid of rows acting as header
 
 stats2019 <- reduced_tbl
 
-View(stats2019)
 
 
 stats2019 <- stats2019[-c(seq(22,374,by = 22),seq(23,374,by = 22)),] #removed unnecessary rows
@@ -24,7 +23,7 @@ stats2019 <- stats2019[-c(1),] #remove 1st row that contains all colnames
 stats2019 <- stats2019[,!duplicated(colnames(stats2019))] #thought it would be easier to remove the bulk and then remove the remaining one
 stats2019 <- stats2019[,-c(9)] 
 
-view(stats2019)
+View(stats2019)
 
 # Years with NCAA March Madness Tournament and Have Stats not separated by conference
 # There are many years on the website that have season stats but they are separated by conference into many tables
