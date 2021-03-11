@@ -38,47 +38,47 @@ Year2 <- Year2 %>% mutate('W-L'=NULL) #removed W-L column
 -------------------------------------------------------------------------------
 #from https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/10/all-conf
 # data for validating model
-url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/"
+url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/0"#note that their is a zero there so this url only works for days before the 10th  
 end <- "/all-conf"
 url <- c()
+lis <- c()
 df <- c()
-a <- seq(1:10)
-for (i in 1:10) {
-    if (a[i] < 10){
-        url[i] <- paste0(url1,0,i,end)
-    } else {
-        url[i] <- paste0(url1,i,end)
-    }
+for (i in 1:2) { #only going through 1:2 to debug
     
-    df[[i]] <- url[i] %>%
+    url[i] <- paste0(url1,i,end)
+    lis[[i]] <- url[i] %>%
         read_html() %>%
         html_nodes(".gamePod.gamePod-type-game.status-final") %>%
         html_text()
+    
+    df <- c(df,lis[[i]]) 
+    #we don't want the data in a list, and it would get to messy me to concentatnate the lis variable in the loop (I think anyways)
 }
 
-df <- "https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/09/all-conf" %>% 
-    read_html() %>% 
-    html_nodes(".gamePod.gamePod-type-game.status-final") %>% 
-    html_text()
-
+# this jsut gets rid of that nasty html stuff (I think that's what it is anyway)
 df <- gsub("\n","",df)
 df <- gsub("  ","",df) 
 df <- gsub("FINAL","",df)
 df <- as_tibble(df)
 
+# making the data more user friendly
 scores <- c()
 teams <- c()
 for (i in 1:dim(df)[1]) {
-    scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1]))
-    teams[i] <- regmatches(df[i,1],gregexpr("\\D+",df[i,1]))
+    #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
+    scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1])) #get the connected numbers
+    teams[i] <- regmatches(df[i,1],gregexpr("\\D+",df[i,1])) # get the strings of words
 }
-
+# this script fails above. extra numbers in both score and team we need to remove
+#down below turns the list into a data frame
 games_score <- as_tibble(do.call(rbind,scores))
-games_team <- as_tibble(do.call(rbind,teams))
+games_team <- as_tibble(do.call(rbind,teams)) 
 
+#make the colnames more user friendly
 colnames(games_score) <- c("score 1","score 2")
 colnames(games_team) <- c("team 1","team 2")
 
+#combine teams and score 
 games <- cbind(games_team,games_score) %>% as_tibble()
 
 
