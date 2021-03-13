@@ -1,5 +1,6 @@
 library(tidyverse)
 library(readxl)
+library(rvest)
 
 #if someone can think of better var name dont be afraid to use it
 
@@ -56,29 +57,38 @@ for (i in 1:2) { #only going through 1:2 to debug
 }
 
 # this jsut gets rid of that nasty html stuff (I think that's what it is anyway)
+df <- gsub("[ |0-2][0-9]\n\n", "", df) # Gets Rid of Seed Number
+
+df <- gsub(" (OT)", "", df, fixed = TRUE) # Get rid of OT and FINAL marks
+df <- gsub(" (2OT)", "", df, fixed = TRUE)
+df <- gsub(" (3OT)", "", df, fixed = TRUE)
+df <- gsub(" (4OT)", "", df, fixed = TRUE)
+df <- gsub(" (5OT)", "", df, fixed = TRUE)
+df <- gsub("FINAL","",df) 
+
 df <- gsub("\n","",df)
 df <- gsub("  ","",df) 
-df <- gsub("FINAL","",df)
 df <- as_tibble(df)
 
 # making the data more user friendly
 scores <- c()
 teams <- c()
-for (i in 1:dim(df)[1]) {
+for (i in 1:dim(df)[1]){
     #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
     scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1])) #get the connected numbers
-    teams[i] <- regmatches(df[i,1],gregexpr("\\D+",df[i,1])) # get the strings of words
+    teams[i] <- regmatches(df[i,1], gregexpr("\\D+",df[i,1])) # get the strings of words
 }
+
 # this script fails above. extra numbers in both score and team we need to remove
 #down below turns the list into a data frame
 games_score <- as_tibble(do.call(rbind,scores))
-games_team <- as_tibble(do.call(rbind,teams)) 
+games_team <- as_tibble(do.call(rbind,teams))
 
 #make the colnames more user friendly
 colnames(games_score) <- c("score 1","score 2")
 colnames(games_team) <- c("team 1","team 2")
 
-#combine teams and score 
+#combine teams and score
 games <- cbind(games_team,games_score) %>% as_tibble()
 
 
