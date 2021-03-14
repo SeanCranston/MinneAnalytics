@@ -1,5 +1,6 @@
 library(tidyverse)
 library(readxl)
+library(rvest)
 
 # #if someone can think of better var name dont be afraid to use it
 # 
@@ -38,49 +39,66 @@ library(readxl)
 -------------------------------------------------------------------------------
 #from https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/10/all-conf
 # data for validating model
-url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/0"#note that their is a zero there so this url only works for days before the 10th  
+url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/"
 end <- "/all-conf"
 url <- c()
 lis <- c()
 df <- c()
-for (i in 1:2) { #only going through 1:2 to debug
     
-    url[i] <- paste0(url1,i,end)
-    lis[[i]] <- url[i] %>%
-        read_html() %>%
-        html_nodes(".gamePod.gamePod-type-game.status-final") %>%
-        html_text()
+i = 1
+# If you go back ,there are games that cause a mismatch in the final df because there's scores are not posted.
+# January 25, 2021 has a few and some day in february has 1 too.
+dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-13"), by="days")
+dates <- format(as.Date(dates), "%Y/%m/%d")
     
+for (date in dates) {
+        
+url[i] <- paste0(url1, date, end)
+lis[[i]] <- url[i] %>%
+    read_html() %>%
+    html_nodes(".gamePod.gamePod-type-game.status-final") %>%
+    html_text()
+        
     df <- c(df,lis[[i]]) 
+    i = i + 1
     #we don't want the data in a list, and it would get to messy me to concentatnate the lis variable in the loop (I think anyways)
 }
-
+    
 # this jsut gets rid of that nasty html stuff (I think that's what it is anyway)
-df <- gsub("\n.","",df)
+df <- gsub("[ |0-2][0-9]\n\n", "", df) # Gets Rid of Seed Number
+
+df <- gsub(" (OT)", "", df, fixed = TRUE) # Get rid of OT and FINAL marks
+df <- gsub(" (2OT)", "", df, fixed = TRUE)
+df <- gsub(" (3OT)", "", df, fixed = TRUE)
+df <- gsub(" (4OT)", "", df, fixed = TRUE)
+df <- gsub(" (5OT)", "", df, fixed = TRUE)
+df <- gsub("FINAL","",df) 
+    
 df <- gsub("\n","",df)
 df <- gsub("  ","",df) 
-df <- gsub("FINAL","",df)
 df <- as_tibble(df)
-
-# spliting the string into 4 columns (by team and score)
+    
+# making the data more user friendly
 scores <- c()
 teams <- c()
-for (i in 1:dim(df)[1]) {
+i = 1
+for (i in 1:dim(df)[1]){
     #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
     scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1])) #get the connected numbers
-    teams[i] <- regmatches(df[i,1],gregexpr("\\D+",df[i,1])) # get the strings of words
+    teams[i] <- regmatches(df[i,1], gregexpr("\\D+",df[i,1])) # get the strings of words
 }
-# this script fails above. extra numbers in both score and team we need to remove
+    
 #down below turns the list into a data frame
 games_score <- as_tibble(do.call(rbind,scores))
-games_team <- as_tibble(do.call(rbind,teams)) 
-
+games_team <- as_tibble(do.call(rbind,teams))
+    
 #make the colnames more user friendly
 colnames(games_score) <- c("score 1","score 2")
 colnames(games_team) <- c("team 1","team 2")
-
-#combine teams and score 
+    
+#combine teams and score
 games <- cbind(games_team,games_score) %>% as_tibble()
+    
 
 
 --------------------------------------------------------------------------------
