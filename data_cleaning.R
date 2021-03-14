@@ -39,20 +39,27 @@ Year2 <- read_excel("NCAA Statistics.xlsx", sheet = "2018-2019")
 -------------------------------------------------------------------------------
 #from https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/10/all-conf
 # data for validating model
-url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/0"#note that their is a zero there so this url only works for days before the 10th  
+url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/"
 end <- "/all-conf"
 url <- c()
 lis <- c()
 df <- c()
-for (i in 1:2) { #only going through 1:2 to debug
+
+i = 1
+# February has 1 and January has 2 team scores missing and cause an error.
+dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-12"), by="days")
+dates <- format(as.Date(dates), "%Y/%m/%d")
+
+for (date in dates) {
     
-    url[i] <- paste0(url1,i,end)
+    url[i] <- paste0(url1, date, end)
     lis[[i]] <- url[i] %>%
         read_html() %>%
         html_nodes(".gamePod.gamePod-type-game.status-final") %>%
         html_text()
     
     df <- c(df,lis[[i]]) 
+    i = i + 1
     #we don't want the data in a list, and it would get to messy me to concentatnate the lis variable in the loop (I think anyways)
 }
 
@@ -73,13 +80,13 @@ df <- as_tibble(df)
 # making the data more user friendly
 scores <- c()
 teams <- c()
+i = 1
 for (i in 1:dim(df)[1]){
     #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
     scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1])) #get the connected numbers
     teams[i] <- regmatches(df[i,1], gregexpr("\\D+",df[i,1])) # get the strings of words
 }
 
-# this script fails above. extra numbers in both score and team we need to remove
 #down below turns the list into a data frame
 games_score <- as_tibble(do.call(rbind,scores))
 games_team <- as_tibble(do.call(rbind,teams))
