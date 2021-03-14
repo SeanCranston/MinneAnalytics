@@ -38,7 +38,6 @@ library(rvest)
 
 -------------------------------------------------------------------------------
 #from https://www.ncaa.com/scoreboard/basketball-men/d1/2021/03/10/all-conf
-# data for validating model
 url1 <- "https://www.ncaa.com/scoreboard/basketball-men/d1/"
 end <- "/all-conf"
 url <- c()
@@ -46,11 +45,12 @@ lis <- c()
 df <- c()
     
 i = 1
-# If you go back ,there are games that cause a mismatch in the final df because there's scores are not posted.
-# January 25, 2021 has a few and some day in february has 1 too.
-dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-13"), by="days")
+# This takes a while to run if the date range is big
+# Looking at March game shtrough today:
+dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-14"), by="days")
 dates <- format(as.Date(dates), "%Y/%m/%d")
-    
+
+# each date from above, create a list for one day at a time[i], one game at a time[[i]].
 for (date in dates) {
         
 url[i] <- paste0(url1, date, end)
@@ -61,7 +61,6 @@ lis[[i]] <- url[i] %>%
         
     df <- c(df,lis[[i]]) 
     i = i + 1
-    #we don't want the data in a list, and it would get to messy me to concentatnate the lis variable in the loop (I think anyways)
 }
     
 # this jsut gets rid of that nasty html stuff (I think that's what it is anyway)
@@ -73,37 +72,40 @@ df <- gsub(" (3OT)", "", df, fixed = TRUE)
 df <- gsub(" (4OT)", "", df, fixed = TRUE)
 df <- gsub(" (5OT)", "", df, fixed = TRUE)
 df <- gsub("FINAL","",df) 
-    
-df <- gsub("\n","",df)
+df <- gsub("\n","",df) # get rid of extra whitespaces and newline characters
 df <- gsub("  ","",df) 
 df <- as_tibble(df)
     
-# making the data more user friendly
+# separate team names and scores from 1 string per game
 scores <- c()
 teams <- c()
 i = 1
 for (i in 1:dim(df)[1]){
-    #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
-    scores[i] <- regmatches(df[i,1], gregexpr("\\d+",df[i,1])) #get the connected numbers
-    teams[i] <- regmatches(df[i,1], gregexpr("\\D+",df[i,1])) # get the strings of words
+    if (grepl("\\d", df[i,1]) == FALSE){
+
+    } else {
+        #uses regular expression, reference: https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
+        scores[i] <- regmatches(df[i,1], gregexpr("\\d+", df[i,1])) #get the connected numbers
+        teams[i] <- regmatches(df[i,1], gregexpr("\\D+", df[i,1])) # get the strings of words
+    }
 }
     
-#down below turns the list into a data frame
+# Combine scores and teams into a data frame
 games_score <- as_tibble(do.call(rbind,scores))
 games_team <- as_tibble(do.call(rbind,teams))
-    
-#make the colnames more user friendly
-colnames(games_score) <- c("score 1","score 2")
-colnames(games_team) <- c("team 1","team 2")
-    
-#combine teams and score
-games <- cbind(games_team,games_score) %>% as_tibble()
-    
 
+colnames(games_score) <- c("score1","score2")
+colnames(games_team) <- c("team1","team2")
+    
+games <- cbind(games_team,games_score) %>% as_tibble()
+games$team1 <- trimws(games$team1) #trim leading whitespace in front of some team names
+games$team2 <- trimws(games$team2)
+    
+View(games)
 
 --------------------------------------------------------------------------------
-# I don't think theirs an easy way to fix the code above
-    #https://www.sports-reference.com/cbb/boxscores/index.cgi?month=03&day=1&year=2021
+    
+#https://www.sports-reference.com/cbb/boxscores/index.cgi?month=03&day=1&year=2021
 url1 <- "https://www.sports-reference.com/cbb/boxscores/index.cgi?month="
 day <- "&day="
 year <- "&year="
