@@ -47,7 +47,7 @@ df <- c()
 
 i = 1
 # February has 1 and January has 2 team scores missing and cause an error.
-dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-12"), by="days")
+dates <-seq(as.Date("2021-03-01"), as.Date("2021-03-13"), by="days")
 dates <- format(as.Date(dates), "%Y/%m/%d")
 
 for (date in dates) {
