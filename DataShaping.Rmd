@@ -1,0 +1,73 @@
+---
+title: "Untitled"
+author: "Nicole Jacobo"
+date: "3/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggbiplot)
+library(tidyverse)
+setwd("C:/Users/nicol/OneDrive/Documents/Projects/NCAA-MM")
+```
+
+```{r, data}
+games.20.21 <- read_fwf("2020-2021.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.19.20 <- read_fwf("2019-2020.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.18.19 <- read_fwf("2018-2019.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.17.18 <- read_fwf("2017-2018.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.16.17 <- read_fwf("2016-2017.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.15.16 <- read_fwf("2015-2016.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+games.14.15 <- read_fwf("2014-2015.txt", fwf_positions(c(1, 13, 38, 42, 67), c(11, 36, 40, 65, 69), c("date", "Team A", "Team A pts", "Team B", "Team B pts")), trim_ws = TRUE)
+
+cbb.19.20 <- read_csv("archive//cbb20.csv", trim_ws = TRUE)
+cbb.18.19 <- read_csv("archive//cbb19.csv", trim_ws = TRUE)
+cbb.17.18 <- read_csv("archive//cbb18.csv", trim_ws = TRUE)
+cbb.16.17 <- read_csv("archive//cbb17.csv", trim_ws = TRUE)
+cbb.15.16 <- read_csv("archive//cbb16.csv", trim_ws = TRUE)
+cbb.14.15 <- read_csv("archive//cbb15.csv", trim_ws = TRUE)
+```
+
+```{r}
+
+dist.name<-adist(cbb.14.15$TEAM, games.14.15$`Team A`, partial = TRUE, ignore.case = TRUE)
+
+min.name<-apply(dist.name, 1, min)
+
+game.dif <- NULL
+for (i in 1:length(games.14.15)){
+    s2.i<-match(min.name[i],dist.name[,i])
+    team.dat <- cbb.14.15[s2.i, ]
+    game.dif <- rbind(team.dat)
+}    
+    
+
+```
+
+```{r}
+dist.name<-adist(games.14.15$`Team A`, cbb.14.15$TEAM, partial = TRUE, ignore.case = TRUE)
+ 
+# We now take the pairs with the minimum distance
+min.name<-apply(dist.name, 1, min)
+ 
+match.s1.s2<-NULL  
+for(i in 1:nrow(dist.name))
+{
+    s2.i<-match(min.name[i],dist.name[,i])
+    s1.i<-i
+    match.s1.s2<-rbind(data.frame(s2.i=s2.i,s1.i=s1.i,s2name=cbb.14.15[s2.i,]$TEAM, s1name=games.14.15[s1.i,]$`Team A`, adist=min.name[i]),match.s1.s2)
+}
+# and we then can have a look at the results
+View(match.s1.s2)
+
+
+
+    team.a <- games.14.15$`Team A`[[i]]
+    team.b <- games.14.15$`Team B`[[i]]
+    team.a.index <- amatch(team.a, cbb.14.15$TEAM, maxDist = 5)
+    team.a.stats <- cbb.14.15[team.a.index]
+}
+
+```
+
