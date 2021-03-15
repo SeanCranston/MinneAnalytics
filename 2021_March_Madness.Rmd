@@ -1,0 +1,190 @@
+---
+title: "2021 March Madness"
+author: "Simeon Paynter"
+date: "3/15/2021"
+output: html_document
+---
+
+Libraries: 
+
+```{r setup, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+
+library(tidyverse)
+library(rvest)
+library(readxl)
+```
+
+Web Scraping CBS for data:
+
+First set (1) of URLs, data frames, etc. are "for" the team. Second set (2) is against the team.
+
+```{r}
+url1 <- "https://www.cbssports.com/college-basketball/stats/team/team/scoring/all-conf/?page="
+url2 <- "https://www.cbssports.com/college-basketball/stats/team/opponent/scoring/all-conf/?page="
+df1 <- c()
+df2 <- c()
+
+for(page_number in 1:7){
+    url_for <- paste0(url1, page_number)
+    url_against <- paste0(url2, page_number)
+    
+    df1 <- read_html(url_for) %>%
+        html_nodes(".TableBase-table") %>%
+        html_table(fill=TRUE) %>% as.data.frame() %>% rbind(df1)
+    
+    df2 <- read_html(url_against) %>% 
+        html_nodes(".TableBase-table") %>%
+        html_table(fill=TRUE) %>% as.data.frame() %>% rbind(df2)
+}
+
+df_for <- df1 %>% arrange(Team)
+df_against <- df2 %>% arrange(Team)
+
+colnames(df_for) <- gsub("\\.(.*)$", "", colnames(df_for))
+colnames(df_against) <- gsub("\\.(.*)$", "", colnames(df_against))
+
+all_stats <- merge(df_for, df_against, by = c("Team", "Conf"), all = TRUE)
+```
+
+Here is a look at the column abbreviations in this dataset.
+
+```{r}
+print(colnames(df1))
+```
+
+ ".x" is for the team. ".y" is agianst the team.  
+We can merge data with a key of indices for only the 68 teams in the tournament:
+
+The Team Indices will be used throughout to reference teams.
+
+```{r}
+MM2021_teams <- read_excel("~/Desktop/March_Madness2021.xlsx", sheet = "TeamStats", 
+                           col_types = c("numeric", "numeric", "text", "text"))
+all_teams_data <- merge(MM2021_teams, all_stats, by.x = "School", by.y = "Team")
+
+head(all_teams_data)
+```
+
+We can write this data into a csv file to further explore it in JMP or so you don't have to wait on it to scrape the CBS website.
+
+```{r}
+# write.csv(all_teams_data, "~/Desktop/TeamData.csv")
+```
+
+These sheets are in the same Excel file as the teams and their indices.  
+These sheets contain indices for each game to reference the bracket's setup.
+
+```{r}
+# replace predicted Winner with result from model above: compare_teams()
+types <- c("numeric", "numeric", "numeric", "text", "numeric", "numeric")
+
+FirstRound <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "FirstRound", col_types = types) # Type in Winners from FirstFour
+SecondRound <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "SecondRound", col_types = types)
+Sweet16 <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Sweet16", col_types = types)
+Elite8 <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Elite8", col_types = types)
+FinalFour <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "FinalFour", col_types = types)
+Championship <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Championship", col_types = types)
+
+head(FirstRound)
+```
+
+Now, let's create some functions. The first one gets important stats for each team, using its index as a reference.
+
+```{r, echo=TRUE}
+team_stats <- function(team_index){
+    stats <- all_teams_data %>% filter(TeamIndex == team_index) # %>% select()
+    
+    return(stats) #return important team stats
+}
+```
+
+The second function will take 2 teams data from the first function and be used to predict a winner, return the winning team's index.
+
+```{r, echo=TRUE}
+predict_winner <- function(team1, team2){
+    t1 <- team_stats(team1)
+    t2 <- team_stats(team2)
+    
+    # Model comparing team stats:
+    #ex. Team's Avg. Points Scored per game - Points socred Against them per game
+    Model_Result <- (t1$PPG.x - t1$PPG.y) - (t2$PPG.x - t2$PPG.y)
+    
+    # If T1 has higher PPG differential than opponent, T1 wins
+    if (Model_Result > 0){
+        return(t1$TeamIndex)
+        
+    } else {
+        return(t2$TeamIndex)
+        
+    }
+}
+```
+
+This funntion will print the results in a meaningful way.
+
+```{r, echo=TRUE}
+print_results <- function(winner, loser){
+    win = all_teams_data %>% filter(TeamIndex == winner)
+    lose = all_teams_data %>% filter(TeamIndex == loser)
+    
+    print(paste0(win$Seed," ", win$School, " (", win$Region, ") beat ", lose$Seed, " ", lose$School, " (", lose$Region, ").", collapse = "\n"))
+    
+    return(NULL)
+}
+```
+
+This function helps build the model, using the predict_winner() function to update the PredictedWinner column and the team indices for following rounds. It also calls upon the print_result() function to print the predictions.
+
+```{r, echo=TRUE}
+bracket_builder <- function(CurrentRound, NextRound){
+
+    for (game in 1:nrow(CurrentRound)){
+        winner <- predict_winner(as.list(CurrentRound[game, "Team1Index"]), as.list(CurrentRound[game, "Team2Index"]))
+        
+        CurrentRound[game, "PredictedWinner"] <- winner
+        
+        if(CurrentRound[game, "Team1Index"] == winner){
+            print_results(winner, as.list(CurrentRound[game, "Team2Index"]))
+            
+        }else{
+            print_results(winner, as.list(CurrentRound[game, "Team1Index"]))
+        }
+    }
+    
+    for (i in 1:nrow(NextRound)){
+        NextRound[i, "Team1Index"] <- CurrentRound %>% filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% slice_head(n=1) %>% select(PredictedWinner)
+        NextRound[i, "Team2Index"] <- CurrentRound %>% filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% slice_tail(n=1) %>% select(PredictedWinner)
+    
+    }
+    
+    return(NextRound)
+}
+```
+
+Now that we have all of the necessary functions, we can use the bracket_builder() function to call each of the rounds, updating the following round with the winning team's indices.
+
+```{r}
+print("ROUND OF 64")
+SecondRound <- bracket_builder(FirstRound, SecondRound)
+print("ROUND OF 32")
+Sweet16 <- bracket_builder(SecondRound, Sweet16)
+print("SWEET 16")
+Elite8 <- bracket_builder(Sweet16, Elite8)
+print("ELITE 8")
+FinalFour <- bracket_builder(Elite8, FinalFour)
+print("FINAL FOUR")
+Championship <- bracket_builder(FinalFour, Championship)
+
+print("2021 NCAA CHAMPIONSHIP")
+winner <- predict_winner(Championship$Team1Index, Championship$Team2Index)
+
+if(Championship$Team1Index == winner){
+    print_results(winner, Championship$Team2Index)
+            
+}else{
+    print_results(winner, Championship$Team1Index)
+  
+}
+```
+
