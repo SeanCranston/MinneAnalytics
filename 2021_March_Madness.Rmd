@@ -59,7 +59,7 @@ We can merge data with a key of indices for only the 68 teams in the tournament:
 The Team Indices will be used throughout to reference teams.
 
 ```{r}
-MM2021_teams <- read_excel("~/Desktop/March_Madness2021.xlsx", sheet = "TeamStats", 
+MM2021_teams <- read_excel("March_Madness2021.xlsx", sheet = "TeamStats", 
                            col_types = c("numeric", "numeric", "text", "text"))
 all_teams_data <- merge(MM2021_teams, all_stats, by.x = "School", by.y = "Team")
 
@@ -79,12 +79,12 @@ These sheets contain indices for each game to reference the bracket's setup.
 # replace predicted Winner with result from model above: compare_teams()
 types <- c("numeric", "numeric", "numeric", "text", "numeric", "numeric")
 
-FirstRound <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "FirstRound", col_types = types) # Type in Winners from FirstFour
-SecondRound <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "SecondRound", col_types = types)
-Sweet16 <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Sweet16", col_types = types)
-Elite8 <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Elite8", col_types = types)
-FinalFour <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "FinalFour", col_types = types)
-Championship <- read_xlsx("~/Desktop/March_Madness2021.xlsx", sheet = "Championship", col_types = types)
+FirstRound <- read_xlsx("March_Madness2021.xlsx", sheet = "FirstRound", col_types = types) # Type in Winners from FirstFour
+SecondRound <- read_xlsx("March_Madness2021.xlsx", sheet = "SecondRound", col_types = types)
+Sweet16 <- read_xlsx("March_Madness2021.xlsx", sheet = "Sweet16", col_types = types)
+Elite8 <- read_xlsx("March_Madness2021.xlsx", sheet = "Elite8", col_types = types)
+FinalFour <- read_xlsx("March_Madness2021.xlsx", sheet = "FinalFour", col_types = types)
+Championship <- read_xlsx("March_Madness2021.xlsx", sheet = "Championship", col_types = types)
 
 head(FirstRound)
 ```
