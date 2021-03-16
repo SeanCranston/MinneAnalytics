@@ -108,7 +108,9 @@ predict_winner <- function(team1, team2){
     
     # Model comparing team stats:
     #ex. Team's Avg. Points Scored per game - Points socred Against them per game
-    Model_Result <- (t1$PPG.x - t1$PPG.y) - (t2$PPG.x - t2$PPG.y)
+    Model_Result <- (t1$PPG.x - t1$PPG.y) - (t2$PPG.x - t2$PPG.y) 
+    #Another example using Free Trhrow Percentage, 3-Pointer Percentages, and Points Per Game as Weighted Linear Combinations
+    #Model_Result <- (30*(t1$FT.x) + 20*(t1$X3FG.x) + 8*(t1$PPG.x)) - (30*(t2$FT.x) + 20*(t2$X3FG.x) + 8*(t2$PPG.x))
     
     # If T1 has higher PPG differential than opponent, T1 wins
     if (Model_Result > 0){
