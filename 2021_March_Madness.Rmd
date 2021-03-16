@@ -113,7 +113,7 @@ predict_winner <- function(team1, team2){
     #Model_Result <- (30*(t1$FT.x) + 20*(t1$X3FG.x) + 8*(t1$PPG.x)) - (30*(t2$FT.x) + 20*(t2$X3FG.x) + 8*(t2$PPG.x))
     
     # If T1 has higher PPG differential than opponent, T1 wins
-    if (Model_Result > 0){
+    if (Model_Result > 0) {
         return(t1$TeamIndex)
         
     } else {
@@ -123,7 +123,7 @@ predict_winner <- function(team1, team2){
 }
 ```
 
-This funntion will print the results in a meaningful way.
+This function will print the results in a meaningful way.
 
 ```{r, echo=TRUE}
 print_results <- function(winner, loser){
@@ -169,12 +169,16 @@ Now that we have all of the necessary functions, we can use the bracket_builder(
 ```{r}
 print("ROUND OF 64")
 SecondRound <- bracket_builder(FirstRound, SecondRound)
+
 print("ROUND OF 32")
 Sweet16 <- bracket_builder(SecondRound, Sweet16)
+
 print("SWEET 16")
 Elite8 <- bracket_builder(Sweet16, Elite8)
+
 print("ELITE 8")
 FinalFour <- bracket_builder(Elite8, FinalFour)
+
 print("FINAL FOUR")
 Championship <- bracket_builder(FinalFour, Championship)
 
@@ -186,7 +190,6 @@ if(Championship$Team1Index == winner){
             
 }else{
     print_results(winner, Championship$Team1Index)
-  
 }
 ```
 
