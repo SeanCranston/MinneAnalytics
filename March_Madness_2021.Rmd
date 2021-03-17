@@ -19,7 +19,7 @@ Excel_File = "March_Madness2021.xlsx"
 Teams_in_Tournament <- read_excel(Excel_File, sheet = "TeamIndex",
                                   col_types = c("numeric", "text"))
 
-head(Teams_in_Tournament)
+#head(Teams_in_Tournament)
 ```
 
 ```{r}
@@ -31,14 +31,14 @@ TeamStats <- read_excel(Excel_File, sheet = "TeamStats",
                                       "numeric", "numeric", "numeric", "numeric",
                                       "numeric", "numeric", "numeric"))
 
-TeamStats %>% filter(TeamIndex == 1) #Gonzaga
+# TeamStats %>% filter(TeamIndex == 1) #Gonzaga
 ```
 
 ```{r}
 kenPom <- read_excel(Excel_File, sheet = "KenPom",
                      col_types = "numeric")
 
-kenPom %>% filter(TeamIndex == 1) # Gonzaga
+# kenPom %>% filter(TeamIndex == 1) # Gonzaga
 ```
 
 Now, we can build a function that returns season stats and kenPom asjusted rankings:
@@ -64,7 +64,7 @@ Previous_Matchups <- read_excel(Excel_File, sheet = "PreviousGames",
                                 col_types = c("numeric", "text", "numeric", "text", 
                                               "numeric", "numeric", "numeric"))
 
-Previous_Matchups %>% filter(Team1Index == 1 | Team2Index == 1) # Gonzaga facing other March Madness Teams
+# Previous_Matchups %>% filter(Team1Index == 1 | Team2Index == 1) # Gonzaga facing other March Madness Teams
 
 teams_played_this_year <- function(team1, team2){
     # Rows where team 1 and team 2 have faced
@@ -159,7 +159,7 @@ Elite8 <- read_xlsx(Excel_File, sheet = "Elite8", col_types = types)
 FinalFour <- read_xlsx(Excel_File, sheet = "FinalFour", col_types = types)
 Championship <- read_xlsx(Excel_File, sheet = "Championship", col_types = types)
 
-head(FirstRound)
+# head(FirstRound)
 ```
 
 This function helps build the model, using the predict_winner() function to update the PredictedWinner column and the team indices for following rounds. It also calls upon the print_result() function to print the predictions.
@@ -181,8 +181,13 @@ bracket_builder <- function(CurrentRound, NextRound){
     }
     
     for (i in 1:nrow(NextRound)){
-        NextRound[i, "Team1Index"] <- CurrentRound %>% filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% slice_head(n=1) %>% select(PredictedWinner)
-        NextRound[i, "Team2Index"] <- CurrentRound %>% filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% slice_tail(n=1) %>% select(PredictedWinner)
+        NextRound[i, "Team1Index"] <- CurrentRound %>% 
+                                        filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% 
+                                        slice_head(n=1) %>% select(PredictedWinner)
+        
+        NextRound[i, "Team2Index"] <- CurrentRound %>% 
+                                        filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% 
+                                        slice_tail(n=1) %>% select(PredictedWinner)
     
     }
     
