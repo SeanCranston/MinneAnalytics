@@ -1,0 +1,60 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup}
+library(tidyverse)
+library(readr)
+#source("data_cleaning.R",echo = FALSE) #to load the Games DF
+source("model_data.R") #Thanks Simeon
+#you can't source Rmd files, only .R files from what I read
+```
+
+```{r some data}
+SeasonStats1993_2021 <- read_csv("SeasonStats1993-2021.csv")
+View(SeasonStats1993_2021)
+```
+
+
+```{r subtracting stats with key}
+#team 0 - team 1
+key <- Previous_Matchups %>% 
+    select(c("Team1Index","Team2Index")) %>% 
+    mutate("Win" = ifelse(Previous_Matchups[,"ScoreDiff"]>0,0,1)) 
+names(key) <- c("Team0Index","Team1Index","Win")# don't know why the [,"ScoreDiff"] is still there
+#if Win == 0 then team 0 wins. if Win == 1 then team 1 wins
+
+Stats <- TeamStats %>% select(-c("School","Region","Conf"))
+values <- Stats[key$Team0Index,]-Stats[key$Team1Index,] #get the difference in team stats
+    
+Model_df0 <- cbind(key,values) %>% 
+    select(-c("Team0Index","Team1Index"))
+#this does indeed work nicely
+
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+# run logistic regression
+# use glm() (general linear model) with family = "binomial" to fit a logistic 
+# regression.
+logit_reg0 <- glm(Win ~ ., 
+                 data = train.df0, 
+                 family = "binomial") 
+options(scipen=999)
+summary(logit_reg0)
+
+
+logit_reg0_pred <- predict(logit_reg0, 
+                           valid_df0[, -1], #get rid of the win column
+                           type = "response")
+
+# first 5 actual and predicted records
+data.frame(actual = valid_df0$Win[1:10], predicted = logit_reg0_pred[1:10])
+
+```
+
+
