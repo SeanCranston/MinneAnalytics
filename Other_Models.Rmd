@@ -53,8 +53,13 @@ logit_reg0_pred <- predict(logit_reg0,
                            type = "response")
 
 # first 5 actual and predicted records
-data.frame(actual = valid_df0$Win[1:10], predicted = logit_reg0_pred[1:10])
-
+pred0 <- tibble(actual = valid_df0$Win,
+                predicted_cutoff = ifelse(logit_reg0_pred>.5,1,0),
+# I think theirs a way to maximized the cutoff pretty easily
+                predicted = logit_reg0_pred)
+View(pred0)
+caret::confusionMatrix(as.factor(pred0$actual),
+                       as.factor(pred0$predicted_cutoff))
 ```
 
 
