@@ -45,13 +45,25 @@ Now, we can build a function that returns season stats and kenPom asjusted ranki
 Once we decide on a model we can return only the data we want.
 
 ```{r}
+#team 0 - team 1
+Model_df0 <- read_excel("test1.xlsx")
+# partition data
+set.seed(8) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+logit_reg0 <- glm(T1_Wins ~ ., 
+                  data = train.df0, 
+                  family = "binomial") 
+
+Teams_21 <- read_excel("2021_WL_EM.xlsx")
+
 team_stats <- function(team_index){
     
-    team_2021 <- TeamStats %>% 
-        filter(TeamIndex == team_index) %>%
-        merge(kenPom, by = "TeamIndex")
+    team_2021 <- Teams_21 %>% 
+        filter(TeamIndex == team_index)
     
-    #print(team_2021)
     return(team_2021)
 }
 ```
@@ -101,21 +113,21 @@ predict_winner <- function(team1, team2){
     t1 <- team_stats(team1)
     t2 <- team_stats(team2)
     
-    # 0 if teams haven't faced, + if t1 scored more points on avg., - if t2 scored more on average
-    AvgScoreDiff <- teams_played_this_year(team1, team2)
+    dif_WL = t1$`W-L%` - t2$`W-L%`
+    dif_AdjEm = t1$Dif.AdjEm - t2$Dif.AdjEm
     
-    # How many points a team scores/gives up on average + difference fro prev. matchups
-    PredictedScoreDiff = (t1$PPG.For + AvgScoreDiff - t1$PPG.Against) - (t2$PPG.For - t2$PPG.Against)
+    df <- data.frame(dif_WL, dif_AdjEm)
+    colnames(df) = c("Dif.Win%", "Dif.AdjEM")
     
-    # If predicted scorediff is +, t1 is predicted to win, - is t2, 0 would be tie needing another else if ()
-    if (PredictedScoreDiff > 0) {
-        
+    score <- predict(logit_reg0, df, "response")
+    
+    if (score >= 0.5){
         return(team1)
-        
-    } else {
+    }else{
         return(team2)
-        
     }
+    
+    
 }
 
 predictedScoreDiff <- function(team1, team2) {
@@ -139,7 +151,7 @@ print_results <- function(winner, loser){
     lose = TeamStats %>% filter(TeamIndex == loser)
     
     print(paste0(win$Seed," ", win$School, " (", win$Region, ") beats ", 
-                 lose$Seed, " ", lose$School, " (", lose$Region, ") by ", round(predictedScoreDiff(winner,loser), 2), " points.",
+                 lose$Seed, " ", lose$School, " (", lose$Region, ").",  #"). by ", #round(predictedScoreDiff(winner,loser), 2), " points.",
                  collapse = "\n"))
     
     return(NULL)
