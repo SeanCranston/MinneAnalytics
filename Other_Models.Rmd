@@ -16,6 +16,53 @@ SeasonStats1993_2021 <- read_csv("SeasonStats1993-2021.csv")
 View(SeasonStats1993_2021)
 ```
 
+```{r subtracting kenpom}
+#team 0 - team 1
+Model_df0 <- read_excel("test1.xlsx")
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+logit_reg0 <- glm(T1_Wins ~ ., 
+                 data = train.df0, 
+                 family = "binomial") 
+options(scipen=999)
+summary(logit_reg0)
+
+
+logit_reg0_pred <- predict(logit_reg0, 
+                           valid_df0[, -3], #get rid of the win column
+                           type = "response")
+
+# first 5 actual and predicted records
+pred0 <- tibble(actual = valid_df0$T1_Wins,
+                predicted_cutoff = ifelse(logit_reg0_pred>.5,1,0),
+# I think theirs a way to maximized the cutoff pretty easily
+                predicted = logit_reg0_pred)
+#View(pred0)
+caret::confusionMatrix(as.factor(pred0$actual),
+                       as.factor(pred0$predicted_cutoff))
+```
+
+```{r}
+teams <- read_excel("2021_WL_EM.xlsx") %>% 
+    select(-c("Seed","Region","Conf"))
+names(teams) <- c("TeamIndex", "School",    "Dif.Win%",      "Dif.AdjEM")
+
+predict_winner()
+
+pred_1 <- predict(logit_reg0,
+                  teams[,c(4,3)],
+                  type = "response")
+
+results <- 
+```
+
+
+
+
 
 ```{r subtracting stats with key}
 #team 0 - team 1
@@ -70,7 +117,9 @@ names(key) <- c("Team0Index","Team1Index","Win")# don't know why the [,"ScoreDif
 #if Win == 0 then team 0 wins. if Win == 1 then team 1 wins
 
 Stats1 <- kenPom 
-
+#team index and 
+#AdjEM21 and AdfEM22
+#effic
 Stats1[Stats1 == 0] <- .01 #so we don't get 0 in the denominator
 values <- Stats1[key$Team0Index,]/Stats1[key$Team1Index,] #get the difference in team stats
     
@@ -100,7 +149,7 @@ pred0 <- tibble(actual = valid_df0$Win,
                 predicted_cutoff = ifelse(logit_reg0_pred>.5,1,0),
 # I think theirs a way to maximized the cutoff pretty easily
                 predicted = logit_reg0_pred)
-#View(pred0)
+View(pred0)
 caret::confusionMatrix(as.factor(pred0$actual),
                        as.factor(pred0$predicted_cutoff))
 ```
