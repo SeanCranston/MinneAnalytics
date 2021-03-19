@@ -38,9 +38,52 @@ train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)
 train.df0 <- Model_df0[train.index0, ]
 valid_df0 <- Model_df0[-train.index0, ]
 
-# run logistic regression
-# use glm() (general linear model) with family = "binomial" to fit a logistic 
-# regression.
+logit_reg0 <- glm(Win ~ ., 
+                 data = train.df0, 
+                 family = "binomial") 
+options(scipen=999)
+summary(logit_reg0)
+
+
+logit_reg0_pred <- predict(logit_reg0, 
+                           valid_df0[, -1], #get rid of the win column
+                           type = "response")
+
+# first 5 actual and predicted records
+pred0 <- tibble(actual = valid_df0$Win,
+                predicted_cutoff = ifelse(logit_reg0_pred>.4,1,0),
+# I think theirs a way to maximized the cutoff pretty easily
+                predicted = logit_reg0_pred)
+#View(pred0)
+caret::confusionMatrix(as.factor(pred0$actual),
+                       as.factor(pred0$predicted_cutoff))
+```
+
+
+
+```{r subtracting kenpom with key}
+#team 0 - team 1
+key <- Previous_Matchups %>% 
+    select(c("Team1Index","Team2Index")) %>% 
+    mutate("Win" = ifelse(Previous_Matchups[,"ScoreDiff"]>0,0,1)) 
+names(key) <- c("Team0Index","Team1Index","Win")# don't know why the [,"ScoreDiff"] is still there
+#if Win == 0 then team 0 wins. if Win == 1 then team 1 wins
+
+Stats1 <- kenPom 
+
+Stats1[Stats1 == 0] <- .01 #so we don't get 0 in the denominator
+values <- Stats1[key$Team0Index,]/Stats1[key$Team1Index,] #get the difference in team stats
+    
+Model_df0 <- cbind(key,values) %>% 
+    select(-c("Team0Index","Team1Index"))
+#this does indeed work nicely
+
+# partition data
+set.seed(2) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
 logit_reg0 <- glm(Win ~ ., 
                  data = train.df0, 
                  family = "binomial") 
@@ -57,9 +100,105 @@ pred0 <- tibble(actual = valid_df0$Win,
                 predicted_cutoff = ifelse(logit_reg0_pred>.5,1,0),
 # I think theirs a way to maximized the cutoff pretty easily
                 predicted = logit_reg0_pred)
-View(pred0)
+#View(pred0)
 caret::confusionMatrix(as.factor(pred0$actual),
                        as.factor(pred0$predicted_cutoff))
 ```
 
+
+```{r 0*1 logistic}
+#team 0 - team 1
+key <- Previous_Matchups %>% 
+    select(c("Team1Index","Team2Index")) %>% 
+    mutate("Win" = ifelse(Previous_Matchups[,"ScoreDiff"]>0,0,1)) 
+names(key) <- c("Team0Index","Team1Index","Win")# don't know why the [,"ScoreDiff"] is still there
+#if Win == 0 then team 0 wins. if Win == 1 then team 1 wins
+
+
+Stats <- TeamStats %>% select(-c("School","Region","Conf"))
+Stats[Stats == 0] <- .01 #so we don't get 0 in the denominator
+values <- Stats[key$Team0Index,]*Stats[key$Team1Index,] #get the proportion in team stats
+    
+Model_df0 <- cbind(key,values) %>% 
+    select(-c("Team0Index","Team1Index"))
+#Model_df0[is.na(Model_df0)] <- 0 
+#this does indeed work nicely
+
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+logit_reg0 <- glm(Win ~ ., 
+                 data = train.df0, 
+                 family = "binomial") 
+options(scipen=999)
+summary(logit_reg0)
+
+
+logit_reg0_pred <- predict(logit_reg0, 
+                           valid_df0[, -1], #get rid of the win column
+                           type = "response")
+
+# first 5 actual and predicted records
+pred0 <- tibble(actual = valid_df0$Win,
+                predicted_cutoff = ifelse(logit_reg0_pred>.45,1,0),
+# I think theirs a way to maximized the cutoff pretty easily
+                predicted = logit_reg0_pred)
+#View(pred0)
+caret::confusionMatrix(as.factor(pred0$actual),
+                       as.factor(pred0$predicted_cutoff))
+```
+
+
+```{r 0/1 logistic}
+#team 0 - team 1
+key <- Previous_Matchups %>% 
+    select(c("Team1Index","Team2Index")) %>% 
+    mutate("Win" = ifelse(Previous_Matchups[,"ScoreDiff"]>0,0,1)) 
+names(key) <- c("Team0Index","Team1Index","Win")# don't know why the [,"ScoreDiff"] is still there
+#if Win == 0 then team 0 wins. if Win == 1 then team 1 wins
+
+
+Stats <- TeamStats %>% select(-c("School","Region","Conf"))
+Stats[Stats == 0] <- .01 #so we don't get 0 in the denominator
+values <- Stats[key$Team0Index,]/Stats[key$Team1Index,] #get the proportion in team stats
+    
+Model_df0 <- cbind(key,values) %>% 
+    select(-c("Team0Index","Team1Index"))
+#Model_df0[is.na(Model_df0)] <- 0 
+#this does indeed work nicely
+
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+logit_reg0 <- glm(Win ~ ., 
+                 data = train.df0, 
+                 family = "binomial") 
+options(scipen=999)
+summary(logit_reg0)
+
+
+logit_reg0_pred <- predict(logit_reg0, 
+                           valid_df0[, -1], #get rid of the win column
+                           type = "response")
+
+# first 5 actual and predicted records
+pred0 <- tibble(actual = valid_df0$Win,
+                predicted_cutoff = ifelse(logit_reg0_pred>.35,1,0),
+# I think theirs a way to maximized the cutoff pretty easily
+                predicted = logit_reg0_pred)
+#View(pred0)
+caret::confusionMatrix(as.factor(pred0$actual),
+                       as.factor(pred0$predicted_cutoff))
+```
+
+
+```{r}
+
+```
 
