@@ -166,3 +166,20 @@ bracket_builder <- function(CurrentRound, NextRound){
     return(NextRound)
 }
 
+
+
+#team 0 - team 1
+Model_df0 <- read_excel("test1.xlsx")
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)  
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+
+logit_reg0 <- glm(T1_Wins ~ ., 
+                  data = train.df0, 
+                  family = "binomial") 
+
+
+
+
