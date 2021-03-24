@@ -484,15 +484,7 @@ Championship &lt;- read_xlsx(Excel_File, sheet = &quot;Championship&quot;, col_t
     return(NextRound)
 }</code></pre>
 <p>Now that we have all of the necessary functions, we can use the bracket_builder() function to call each of the rounds, updating the following round with the winning team’s indices.</p>
-<pre class="r"><code># print(&quot;ROUND OF 64&quot;)
-# SecondRound &lt;- bracket_builder(FirstRound, SecondRound)
-
-# print(&quot;ROUND OF 32&quot;)
-# Sweet16 &lt;- bracket_builder(SecondRound, Sweet16)
-
-print(&quot;SWEET 16&quot;)</code></pre>
 <pre><code>## [1] &quot;SWEET 16&quot;</code></pre>
-<pre class="r"><code>Elite8 &lt;- bracket_builder(Sweet16, Elite8)</code></pre>
 <pre><code>## [1] &quot;1 Gonzaga (West) beats 5 Creighton (West).&quot;
 ## [1] &quot;6 USC (West) beats 7 Oregon (West).&quot;
 ## [1] &quot;1 Baylor (South) beats 5 Villanova (South).&quot;
@@ -501,28 +493,15 @@ print(&quot;SWEET 16&quot;)</code></pre>
 ## [1] &quot;2 Alabama (East) beats 11 UCLA (East).&quot;
 ## [1] &quot;8 Loyola Chi. (Midwest) beats 12 Oregon St. (Midwest).&quot;
 ## [1] &quot;2 Houston (Midwest) beats 11 Syracuse (Midwest).&quot;</code></pre>
-<pre class="r"><code>print(&quot;ELITE 8&quot;)</code></pre>
 <pre><code>## [1] &quot;ELITE 8&quot;</code></pre>
-<pre class="r"><code>FinalFour &lt;- bracket_builder(Elite8, FinalFour)</code></pre>
 <pre><code>## [1] &quot;1 Gonzaga (West) beats 6 USC (West).&quot;
 ## [1] &quot;1 Baylor (South) beats 3 Arkansas (South).&quot;
 ## [1] &quot;1 Michigan (East) beats 2 Alabama (East).&quot;
 ## [1] &quot;2 Houston (Midwest) beats 8 Loyola Chi. (Midwest).&quot;</code></pre>
-<pre class="r"><code>print(&quot;FINAL FOUR&quot;)</code></pre>
 <pre><code>## [1] &quot;FINAL FOUR&quot;</code></pre>
-<pre class="r"><code>Championship &lt;- bracket_builder(FinalFour, Championship)</code></pre>
 <pre><code>## [1] &quot;1 Michigan (East) beats 1 Gonzaga (West).&quot;
 ## [1] &quot;1 Baylor (South) beats 2 Houston (Midwest).&quot;</code></pre>
-<pre class="r"><code>print(&quot;2021 NCAA CHAMPIONSHIP&quot;)</code></pre>
 <pre><code>## [1] &quot;2021 NCAA CHAMPIONSHIP&quot;</code></pre>
-<pre class="r"><code>winner &lt;- predict_winner(Championship$Team1Index, Championship$Team2Index)
-
-if(Championship$Team1Index == winner){
-    print_results(winner, Championship$Team2Index)
-            
-}else{
-    print_results(winner, Championship$Team1Index)
-}</code></pre>
 <pre><code>## [1] &quot;1 Michigan (East) beats 1 Baylor (South).&quot;</code></pre>
 <pre><code>## NULL</code></pre>
 

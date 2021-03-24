@@ -153,7 +153,7 @@ bracket_builder <- function(CurrentRound, NextRound){
 
 Now that we have all of the necessary functions, we can use the bracket_builder() function to call each of the rounds, updating the following round with the winning team's indices.
 
-```{r}
+```{r, echo=FALSE}
 # print("ROUND OF 64")
 # SecondRound <- bracket_builder(FirstRound, SecondRound)
 
