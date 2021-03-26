@@ -1,0 +1,185 @@
+---
+title: "Sweet 16"
+date: "3/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(readxl)
+
+Excel_File = "UPDATEDMarch_Madness2021.xlsx"
+```
+
+1) Read in Sheets from March_Madness2021 Excel File:
+
+```{r}
+Teams_in_Tournament <- read_excel(Excel_File, sheet = "TeamIndex",
+                                  col_types = c("numeric", "text", "text"))
+
+TeamStats <- read_excel(Excel_File, sheet="TeamStats")
+```
+
+```{r}
+Team_For <- read_excel("/Users/Simbo/Desktop/All_TeamStats_2021/Indexed_NCAA_2021_TeamsFor.xlsx")
+```
+
+```{r}
+Model_df0 <- read_excel("Model_Rev1A.xlsx")
+
+# partition data
+set.seed(3.14) #lucky number
+train.index0 <- sample(c(1:dim(Model_df0)[1]), dim(Model_df0)[1]*0.6)
+train.df0 <- Model_df0[train.index0, ]
+valid_df0 <- Model_df0[-train.index0, ]
+# -1 suppresses intercept
+logit_reg0 <- glm(T1_Wins ~ . -1, 
+                  data = train.df0, 
+                  family = "binomial")
+
+summary(logit_reg0)
+```
+
+Function that returns the team stats used by our model:
+
+```{r}
+team_stats <- function(team_index){
+
+    team_2021 <- Team_For %>% 
+        filter(TeamIndex == team_index) %>% 
+        select("RPG", "SPG", "TOPG", "GP", "FGA", "FG", "X3FGA", "X3FG", "FT") %>% 
+        mutate(Avg_FGA = FGA/GP, AVG_3ptA = X3FGA/GP)
+    
+    return(team_2021)
+}
+```
+
+Fucntion takes in the two teams in a given matchup and returns the winner.
+
+```{r, echo=TRUE}
+predict_winner <- function(team1, team2){
+    t1 <- team_stats(team1)
+    t2 <- team_stats(team2)
+    
+    Diff.TRB = t1$RPG - t2$RPG # difference in total rebounds
+    Diff.TOV = t1$TOPG - t2$TOPG # difference in turnovers
+    Diff.Avg.FGA = t1$Avg_FGA - t2$Avg_FGA
+    Diff.STL = t1$SPG - t2$SPG
+    Diff.FGp = t1$FG - t2$FG
+    Diff.3PA = t1$AVG_3ptA - t2$AVG_3ptA
+    Diff.FTp = t1$FT - t2$FT
+    Diff.3p = t1$X3FG - t2$X3FG
+    
+    #Interaction_3 = Diff.3PA * Diff.3p
+    #Interaction_FG = Diff.Avg.FGA * Diff.FGp
+
+    df <- c()
+    df <- df %>% cbind(Diff.TRB, Diff.TOV, Diff.Avg.FGA, Diff.STL, Diff.FGp, Diff.3PA, Diff.FTp, Diff.3p) %>% as.data.frame()
+
+    pred_winner <- predict(logit_reg0, df, "response")
+    
+    #print(Model_JMP_Result)
+    
+    print(pred_winner)
+    
+    if (pred_winner > 0.5){
+        return(team1)
+    }else{
+        return(team2)
+    }
+}
+```
+
+This function will print the results in a meaningful way.
+
+```{r, echo=TRUE}
+print_results <- function(winner, loser){
+    win = TeamStats %>% filter(TeamIndex == winner)
+    lose = TeamStats %>% filter(TeamIndex == loser)
+    
+    print(paste0(win$Seed," ", win$School, " (", win$Region, ") beats ", 
+                 lose$Seed, " ", lose$School, " (", lose$Region, ").",
+                 collapse = "\n"))
+    
+    return(NULL)
+}
+```
+
+The following functions take in bracket format and moves winners along.
+
+```{r}
+types <- c("numeric", "numeric", "numeric", "text", "numeric", "numeric")
+
+#Excel_File = "/Users/Simbo/Desktop/Spring 2021/Other/minneMUDAC competition/MinneAnalytics/March_Madness2021.xlsx"
+#FirstRound <- read_xlsx(Excel_File, sheet = "FirstRound", col_types = types)
+#SecondRound <- read_xlsx(Excel_File, sheet = "SecondRound", col_types = types)
+
+#Excel file wth updated teams(actual winners) is the same as the one at the top
+Sweet16 <- read_xlsx(Excel_File, sheet = "Sweet16", col_types = types)
+Elite8 <- read_xlsx(Excel_File, sheet = "Elite8", col_types = types)
+FinalFour <- read_xlsx(Excel_File, sheet = "FinalFour", col_types = types)
+Championship <- read_xlsx(Excel_File, sheet = "Championship", col_types = types)
+```
+
+This function helps build the model, using the predict_winner() function to update the PredictedWinner column and the team indices for following rounds. It also calls upon the print_result() function to print the predictions.
+
+```{r, echo=TRUE}
+bracket_builder <- function(CurrentRound, NextRound){
+
+    for (game in 1:nrow(CurrentRound)){
+        winner <- predict_winner(as.list(CurrentRound[game, "Team1Index"]), as.list(CurrentRound[game, "Team2Index"]))
+        
+        CurrentRound[game, "PredictedWinner"] <- winner
+        
+        if(CurrentRound[game, "Team1Index"] == winner){
+            print_results(winner, as.list(CurrentRound[game, "Team2Index"]))
+            
+        }else{
+            print_results(winner, as.list(CurrentRound[game, "Team1Index"]))
+        }
+    }
+    
+    for (i in 1:nrow(NextRound)){
+        NextRound[i, "Team1Index"] <- CurrentRound %>% 
+                                        filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% 
+                                        slice_head(n=1) %>% select(PredictedWinner)
+        
+        NextRound[i, "Team2Index"] <- CurrentRound %>% 
+                                        filter(NextGameIndex == as.list(NextRound[i, "GameIndex"])) %>% 
+                                        slice_tail(n=1) %>% select(PredictedWinner)
+    
+    }
+    
+    return(NextRound)
+}
+```
+
+Now that we have all of the necessary functions, we can use the bracket_builder() function to call each of the rounds, updating the following round with the winning team's indices.
+
+```{r, echo=FALSE}
+#print("ROUND OF 64")
+#SecondRound <- bracket_builder(FirstRound, SecondRound)
+
+#print("ROUND OF 32")
+#Sweet16 <- bracket_builder(SecondRound, Sweet16)
+
+print("SWEET 16")
+Elite8 <- bracket_builder(Sweet16, Elite8)
+
+print("ELITE 8")
+FinalFour <- bracket_builder(Elite8, FinalFour)
+
+print("FINAL FOUR")
+Championship <- bracket_builder(FinalFour, Championship)
+
+print("2021 NCAA CHAMPIONSHIP")
+winner <- predict_winner(Championship$Team1Index, Championship$Team2Index)
+
+if(Championship$Team1Index == winner){
+    print_results(winner, Championship$Team2Index)
+            
+}else{
+    print_results(winner, Championship$Team1Index)
+}
+```
